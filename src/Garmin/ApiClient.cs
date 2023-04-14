@@ -4,9 +4,13 @@ using Common.Stateful;
 using Flurl.Http;
 using Garmin.Auth;
 using Garmin.Dto;
+using Newtonsoft.Json;
 using Serilog;
+using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Garmin
@@ -18,6 +22,7 @@ namespace Garmin
 		Task<string> SendMfaCodeAsync(string userAgent, object queryParams, object mfaData, CookieJar jar);
 		Task<IFlurlResponse> SendServiceTicketAsync(string userAgent, string serviceTicket, CookieJar jar);
 		Task<UploadResponse> UploadActivity(string filePath, string format, GarminApiAuthentication auth);
+		Task<DateTime> GetLatestActivity(GarminApiAuthentication auth);
 	}
 
 	public class ApiClient : IGarminApiClient
@@ -79,6 +84,26 @@ namespace Garmin
 						.GetAsync();
 		}
 
+		// Get the latest activity from GarminConnect, returned as json
+		public async Task<DateTime> GetLatestActivity(GarminApiAuthentication auth)
+		{
+			var response = await $"{BASE_URL}/proxy/activitylist-service/activities/search/activities?start=0&limit=1"
+				.WithCookies(auth.CookieJar)
+				.WithHeader("NK", "NT")
+				.WithHeader("origin", ORIGIN)
+				.WithHeader("User-Agent", auth.UserAgent)
+				.GetAsync();				
+
+			// Get the response message			
+			var res = await response.ResponseMessage.Content.ReadAsStringAsync();
+			// Parse the json response
+			dynamic json = JsonConvert.DeserializeObject(res);
+			// Get the datetime element "startTimeGMT" from the json array
+			var date = ((Newtonsoft.Json.Linq.JToken)json).Root[0]["startTimeGMT"].ToString();
+			// Convert the datetime value to a DateTime object
+			var dateValue = DateTime.Parse(date);
+			return dateValue;
+		}
 		public async Task<UploadResponse> UploadActivity(string filePath, string format, GarminApiAuthentication auth)
 		{
 			var fileName = Path.GetFileName(filePath);

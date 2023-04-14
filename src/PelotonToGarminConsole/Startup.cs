@@ -136,7 +136,19 @@ namespace PelotonToGarminConsole
 							}
 						}
 
-						var syncResult = await _syncService.SyncAsync(settings.Peloton.NumWorkoutsToDownload);
+						SyncResult syncResult;
+						if (settings.Peloton.GetLatestWorkouts)
+						{
+							// first get the latest activity date from the garmin
+							var latestActivityDate = await _syncService.GetLatestGarminActivity();
+							_logger.Information($"Getting all activities after {latestActivityDate.ToString()}");
+							syncResult = await _syncService.SyncAsync(latestActivityDate);
+						}
+						else
+						{
+							_logger.Information($"Grabbing the last {settings.Peloton.NumWorkoutsToDownload} workouts");
+							syncResult = await _syncService.SyncAsync(settings.Peloton.NumWorkoutsToDownload);
+						}
 						Health.Set(syncResult.SyncSuccess ? HealthStatus.Healthy : HealthStatus.UnHealthy);
 
 						Log.Information("Done");

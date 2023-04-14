@@ -21,7 +21,9 @@ namespace Sync
 	public interface ISyncService
 	{
 		Task<SyncResult> SyncAsync(int numWorkouts);
+		Task<SyncResult> SyncAsync(DateTime lastSyncTime);
 		Task<SyncResult> SyncAsync(IEnumerable<string> workoutIds, ICollection<WorkoutType>? exclude = null);
+		Task<DateTime> GetLatestGarminActivity();
 	}
 
 	public class SyncService : ISyncService
@@ -45,7 +47,21 @@ namespace Sync
 			_db = dbClient;
 			_fileHandler = fileHandler;
 		}
+		public async Task<DateTime> GetLatestGarminActivity()
+		{
+			var latest = await _garminUploader.GetLatestActivity();
+			return latest;
+		}
 
+		public async Task<SyncResult> SyncAsync(DateTime lastSyncTime)
+		{
+			using var timer = SyncHistogram.NewTimer();
+			using var activity = Tracing.Trace($"{nameof(SyncService)}.{nameof(SyncAsync)}.ByLastSyncTime")
+										.WithTag("lastSyncTime", lastSyncTime.ToString());
+
+			var settings = await _settingsService.GetSettingsAsync();
+			return await SyncWithWorkoutLoaderAsync(() => _pelotonService.GetWorkoutsSinceAsync(lastSyncTime), settings.Peloton.ExcludeWorkoutTypes);
+		}
 		public async Task<SyncResult> SyncAsync(int numWorkouts)
 		{
 			using var timer = SyncHistogram.NewTimer();

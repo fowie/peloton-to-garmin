@@ -21,7 +21,8 @@
     "Email": "",
     "Password": "",
     "NumWorkoutsToDownload": 1,
-    "ExcludeWorkoutTypes": [ ]
+    "ExcludeWorkoutTypes": [],
+    "GetLatestWorkouts" : true
   },
 
   "Garmin": {

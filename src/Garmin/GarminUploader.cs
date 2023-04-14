@@ -17,6 +17,8 @@ namespace Garmin
 	public interface IGarminUploader
 	{
 		Task UploadToGarminAsync();
+
+		Task<DateTime> GetLatestActivity();
 	}
 
 	public class GarminUploader : IGarminUploader
@@ -86,7 +88,13 @@ namespace Garmin
 					return;
 			}
 		}
+		public async Task<DateTime> GetLatestActivity()
+		{	
+			using var tracing = Tracing.Trace($"{nameof(GarminUploader)}.{nameof(GetLatestActivity)}");
+			var auth = await _authService.GetGarminAuthenticationAsync();
 
+			return await _api.GetLatestActivity(auth);
+		}
 		private async Task UploadAsync(string[] files, Settings settings)
 		{
 			using var tracing = Tracing.Trace($"{nameof(GarminUploader)}.{nameof(UploadAsync)}.UploadToGarminViaNative")?

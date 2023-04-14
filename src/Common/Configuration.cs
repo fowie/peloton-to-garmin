@@ -179,12 +179,14 @@ public class Peloton : ICredentials
 	{
 		ExcludeWorkoutTypes = new List<WorkoutType>();
 		NumWorkoutsToDownload = 5;
+		GetLatestWorkouts = false;
 	}
 
 	public EncryptionVersion EncryptionVersion { get; set; }
 	public string Email { get; set; }
 	public string Password { get; set; }
 	public int NumWorkoutsToDownload { get; set; }
+	public bool GetLatestWorkouts { get; set; }
 	public ICollection<WorkoutType> ExcludeWorkoutTypes { get; set; }
 }
 
